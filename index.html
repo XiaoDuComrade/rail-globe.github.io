@@ -250,16 +250,16 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
 .maplibregl-ctrl-attrib { background: rgba(28, 28, 30, 0.6) !important; }
 .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner, .maplibregl-ctrl-attrib a { color: var(--label2) !important; font-size: 0.6875rem; }
 .maplibregl-ctrl-attrib-button { filter: invert(1); opacity: 0.75; }
-/* On a wide screen the credits stand in the window's own lower left corner, 12 px in, as on any
-   map, under the card: the card ends 56 px above the window's foot, which leaves their line
-   free at every height of the card. They are a control of their own there (see the script); the
-   one in the right corner, with the scale, is the phone's. The corner ends before the scale
-   begins, so a narrow window wraps the open line rather than run it under the scale. */
+/* The credits stand in the window's lower right corner at every width (2026-10-13, "放右下角"):
+   one control, with the scale. On a wide screen it is 12 px in, as the zoom buttons are above,
+   and the scale stands on its left on the same line; opened, the words push the scale further
+   left. The card ends 56 px above the window's foot, so that line is free of it in a narrow
+   window too. */
 @media not all and (max-width: 720px) {
   #panel { max-height: calc(100% - 68px - env(safe-area-inset-bottom, 0px) - var(--kb, 0px)); }
-  .maplibregl-ctrl-bottom-left { left: env(safe-area-inset-left, 0px); right: calc(120px + env(safe-area-inset-right, 0px)); }
-  .maplibregl-ctrl-bottom-left .maplibregl-ctrl.maplibregl-ctrl-attrib { margin: 0 0 12px 12px; }
-  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { display: none; }
+  .maplibregl-ctrl-bottom-right { display: flex; flex-direction: row-reverse; align-items: flex-end; max-width: calc(100% - 24px); }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-attrib { margin: 0 12px 12px 0; }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-scale { margin: 0 8px 14px 0; }
 }
 .maplibregl-ctrl-scale { background: rgba(28, 28, 30, 0.5); color: var(--label); border-color: var(--label2); font: 0.6875rem var(--font); font-variant-numeric: tabular-nums; }
 #loading { position: fixed; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; font-size: 0.8125rem; color: var(--label2); }
@@ -351,7 +351,6 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
      are in sight at every height; at its highest that is the corner the quick jumps leave free,
      where there is room for the credits only. */
   .maplibregl-ctrl-bottom-right { will-change: transform; }
-  .maplibregl-ctrl-bottom-left { display: none; }       /* (the desktop's credits; here they ride on the sheet) */
   body[data-sheet="large"] .maplibregl-ctrl-scale { display: none; }
   #loading { top: 30%; }
 }
@@ -1613,34 +1612,31 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
   // The credits (OpenStreetMap, the imagery) are a condition of the data: the map's own control
-  // carries them, open when the page opens. On a phone it rides on the sheet with the scale.
-  // Beside the desktop card a second one stands in the map's lower left corner (the styles show
-  // one or the other): that one folds to its (i) after five seconds with the map, or when the
-  // map is first touched (moved, zoomed, clicked), whichever comes first; a click on the (i)
-  // opens it, and the next touch of the map folds it again. A picture taken of the page (?shot)
-  // has it open: nobody touches that map, and a picture that leaves the page should carry its
-  // credits.
+  // carries them, one control in the lower right corner with the scale at every width; on a
+  // phone the two ride on the sheet. A click on its (i) opens it; it folds again after five
+  // seconds with the map, or at the map's next touch (moved, zoomed, clicked), whichever comes
+  // first.
   // (The control puts its credits in order of length, and the link makes the first the longer:
   // the whole line is given as one, and the imagery's own credit, being part of it, is not said twice.)
   const IMAGERY = 'Imagery © Esri, Maxar, Earthstar Geographics';
   const creditLine = () => `© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ${t('credits.osm')} | ` + IMAGERY;
-  // (a control keeps the words it was made with: when the language changes both are made
-  // again, each folded if it was)
-  const CORNERS = ['bottom-right', 'bottom-left'], creditOf = corner => document.querySelector(`.maplibregl-ctrl-${corner} .maplibregl-ctrl-attrib`);
+  // (a control keeps the words it was made with: when the language changes it is made again,
+  // folded if it was)
   const fold = el => { el.classList.remove('maplibregl-compact-show'); el.removeAttribute('open'); };
-  let creditControls = [], credits = null;
+  let creditControl = null, credits = null;
   const addCredits = () => {
-    const folded = CORNERS.filter(corner => creditControls.length && !creditOf(corner).classList.contains('maplibregl-compact-show'));
-    for (const control of creditControls) map.removeControl(control);
-    creditControls = CORNERS.map(corner => { const control = new maplibregl.AttributionControl({ compact: true, customAttribution: creditLine() }); map.addControl(control, corner); return control; });
-    credits = creditOf('bottom-left');
-    for (const corner of folded) fold(creditOf(corner));
+    const folded = credits && !credits.classList.contains('maplibregl-compact-show');
+    if (creditControl) map.removeControl(creditControl);
+    creditControl = new maplibregl.AttributionControl({ compact: true, customAttribution: creditLine() });
+    map.addControl(creditControl, 'bottom-right');
+    credits = document.querySelector('.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib');
+    if (folded) fold(credits);
   };
   addCredits();
   relabelled.push(addCredits);
   // The credits start folded to their (i), which opens them: the words stay one tap away at
   // every width and are never removed. (Until 2026-10-12 they stood open for the first five seconds.)
-  for (const corner of CORNERS) fold(creditOf(corner));
+  fold(credits);
   let creditTimer = 0;
   // (folded is: neither the class nor "open"; the control's own button then opens it)
   const foldCredits = () => { clearTimeout(creditTimer); fold(credits); };

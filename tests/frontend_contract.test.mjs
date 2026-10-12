@@ -179,31 +179,26 @@ const checks = [
   // the credits are in sight at every height of the sheet: they ride on its upper edge
   ['the credits and the scale ride on the sheet', /riders = riders && riders\.isConnected \? riders : document\.querySelector\('\.maplibregl-ctrl-bottom-right'\);\s+if \(riders\) riders\.style\.transform = `translateY\(\$\{Math\.round\(y - H\)\}px\)`;/],
   ['at the sheet\'s highest the credits fold to their button, the scale goes', page => /const credits = at === 'large' && document\.querySelector\('\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl-attrib\.maplibregl-compact-show'\);/.test(page) && /body\[data-sheet="large"\] \.maplibregl-ctrl-scale \{ display: none; \}/.test(page)],
-  // The credits are the map's own control at every width: on a phone the one that rides on the
-  // sheet, beside the desktop card one in the map's lower left corner. Each is off only where
-  // the other is on.
-  ['the credits are on at every width: each control is off only where the other is on', page => {
+  // 2026-10-13, "放右下角": one control, in the lower right corner with the scale at every width
+  // (until then the desktop had a second one in the lower left). Nothing hides it at any width.
+  ['the credits are one control in the lower right corner, on at every width', page => {
     const styles = page.slice(page.indexOf('/* Layout: a satellite globe'), page.indexOf('<div id="map"'));
-    const off = [...styles.matchAll(/([^{}\n]*maplibregl-ctrl-(?:attrib|bottom-left)[^{}]*)\{[^}]*(?:display: none|visibility: hidden|opacity: 0;)[^}]*\}/g)].map(m => m[1].trim());
-    return JSON.stringify(off) === JSON.stringify(['.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib', '.maplibregl-ctrl-bottom-left'])
-      && /@media not all and \(max-width: 720px\) \{[^@]*?\.maplibregl-ctrl-bottom-left \{[^}]*\}[^@]*?\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl-attrib \{ display: none; \}\s+\}/.test(styles)
-      && /@media \(max-width: 720px\) \{[\s\S]*\n  \.maplibregl-ctrl-bottom-left \{ display: none; \}/.test(styles);
+    const off = [...styles.matchAll(/([^{}\n]*maplibregl-ctrl-(?:attrib|bottom-left|bottom-right)[^{}]*)\{[^}]*(?:display: none|visibility: hidden|opacity: 0;)[^}]*\}/g)].map(m => m[1].trim());
+    return off.length === 0 && !page.includes("'bottom-left'") && (page.match(/new maplibregl\.AttributionControl\(/g) || []).length === 1;
   }],
-  ['the words of the credits, with the link to the licence, in both controls', page =>
+  ['the words of the credits, with the link to the licence', page =>
     page.includes(`const IMAGERY = 'Imagery © Esri, Maxar, Earthstar Geographics';`)
     && page.includes("const creditLine = () => `© <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap</a> ${t('credits.osm')} | ` + IMAGERY;")
-    && /const CORNERS = \['bottom-right', 'bottom-left'\]/.test(page)
-    && /creditControls = CORNERS\.map\(corner => \{ const control = new maplibregl\.AttributionControl\(\{ compact: true, customAttribution: creditLine\(\) \}\); map\.addControl\(control, corner\); return control; \}\);/.test(page)
+    && /creditControl = new maplibregl\.AttributionControl\(\{ compact: true, customAttribution: creditLine\(\) \}\);\s+map\.addControl\(creditControl, 'bottom-right'\);/.test(page)
     && /\n\s+attribution: IMAGERY,/.test(page)],
-  ['the credits are made again in the language of the moment, each folded if it was', /const folded = CORNERS\.filter\(corner => creditControls\.length && !creditOf\(corner\)\.classList\.contains\('maplibregl-compact-show'\)\);\s+for \(const control of creditControls\) map\.removeControl\(control\);[\s\S]{0,400}for \(const corner of folded\) fold\(creditOf\(corner\)\);\s+\};\s+addCredits\(\);\s+relabelled\.push\(addCredits\);/],
-  // 2026-10-10, "这没有完全到左下角啊": the window's own corner, 12 px in, under the card, which ends 56 px above the foot
-  ['on a wide screen the credits stand in the window\'s lower left corner, under the card, and end before the scale', page =>
-    /\.maplibregl-ctrl-bottom-left \{ left: env\(safe-area-inset-left, 0px\); right: calc\(120px \+ env\(safe-area-inset-right, 0px\)\); \}/.test(page)
-    && /\.maplibregl-ctrl-bottom-left \.maplibregl-ctrl\.maplibregl-ctrl-attrib \{ margin: 0 0 12px 12px; \}/.test(page)
+  ['the credits are made again in the language of the moment, folded if they were', /const folded = credits && !credits\.classList\.contains\('maplibregl-compact-show'\);\s+if \(creditControl\) map\.removeControl\(creditControl\);[\s\S]{0,400}if \(folded\) fold\(credits\);\s+\};\s+addCredits\(\);\s+relabelled\.push\(addCredits\);/],
+  ['on a wide screen the credits are 12 px in from the corner, the scale on their left, the card clear of their line', page =>
+    /\.maplibregl-ctrl-bottom-right \{ display: flex; flex-direction: row-reverse; align-items: flex-end; max-width: calc\(100% - 24px\); \}/.test(page)
+    && /\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl\.maplibregl-ctrl-attrib \{ margin: 0 12px 12px 0; \}/.test(page)
     && /@media not all and \(max-width: 720px\) \{\s+#panel \{ max-height: calc\(100% - 68px - env\(safe-area-inset-bottom, 0px\) - var\(--kb, 0px\)\); \}/.test(page)],
-  ['the credits start folded to their (i), in both corners', /relabelled\.push\(addCredits\);\s+\/\/[^\n]*\n\s+\/\/[^\n]*\n\s+for \(const corner of CORNERS\) fold\(creditOf\(corner\)\);/],
+  ['the credits start folded to their (i)', /relabelled\.push\(addCredits\);\s+\/\/[^\n]*\n\s+\/\/[^\n]*\n\s+fold\(credits\);/],
   ['once opened they fold again after five seconds with the map or at its next touch; the (i) opens them', page =>
-    /credits = creditOf\('bottom-left'\);/.test(page)
+    /credits = document\.querySelector\('\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl-attrib'\);/.test(page)
     && /const fold = el => \{ el\.classList\.remove\('maplibregl-compact-show'\); el\.removeAttribute\('open'\); \};/.test(page)
     && /const foldCredits = \(\) => \{ clearTimeout\(creditTimer\); fold\(credits\); \};/.test(page)
     && /const creditsSeen = \(\) => \{ if \(!SHOT\) creditTimer = setTimeout\(foldCredits, 5000\); \};/.test(page)
