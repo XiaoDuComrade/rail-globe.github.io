@@ -108,7 +108,7 @@ const checks = [
   ['setCountry updates the colour section', /colourSection\(g\);/],
   // 6e. one search field for everything (2026-10-09): first thing in the card, its results take
   // the place of the tabs, the lines tab has no search of its own, the route fields use the same function
-  ['the search field is the first thing in the card', /<div class="grabber" aria-hidden="true"><\/div>\s+<label class="searchbar">[\s\S]{0,400}<input id="query" type="search"/],
+  ['the search field is the first thing in the card', /<div class="grabber" aria-hidden="true"><\/div>\s+<div class="search-row">\s+<img class="mark" src="mark\.png"[^>]*>\s+<label class="searchbar">[\s\S]{0,400}<input id="query" type="search"/],
   ['three search inputs: the field and the two route fields', page => (page.match(/type="search"/g) || []).length === 3],
   ['the lines tab has no search of its own', /^(?![\s\S]*id="search")(?![\s\S]*search\.value)(?![\s\S]*搜索线路，如)(?![\s\S]*输入关键词缩小范围)/],
   ['the results take the place of the tab, or of the list of countries', /t\.hidden = t\.id !== 'tab-' \+ \(finding \? 'find' : world \? 'world' : shownTab\)/],
@@ -201,7 +201,8 @@ const checks = [
     /\.maplibregl-ctrl-bottom-left \{ left: env\(safe-area-inset-left, 0px\); right: calc\(120px \+ env\(safe-area-inset-right, 0px\)\); \}/.test(page)
     && /\.maplibregl-ctrl-bottom-left \.maplibregl-ctrl\.maplibregl-ctrl-attrib \{ margin: 0 0 12px 12px; \}/.test(page)
     && /@media not all and \(max-width: 720px\) \{\s+#panel \{ max-height: calc\(100% - 68px - env\(safe-area-inset-bottom, 0px\) - var\(--kb, 0px\)\); \}/.test(page)],
-  ['they are open when the page opens and fold after five seconds with the map or at its first touch; the (i) opens them', page =>
+  ['the credits start folded to their (i), in both corners', /relabelled\.push\(addCredits\);\s+\/\/[^\n]*\n\s+\/\/[^\n]*\n\s+for \(const corner of CORNERS\) fold\(creditOf\(corner\)\);/],
+  ['once opened they fold again after five seconds with the map or at its next touch; the (i) opens them', page =>
     /credits = creditOf\('bottom-left'\);/.test(page)
     && /const fold = el => \{ el\.classList\.remove\('maplibregl-compact-show'\); el\.removeAttribute\('open'\); \};/.test(page)
     && /const foldCredits = \(\) => \{ clearTimeout\(creditTimer\); fold\(credits\); \};/.test(page)

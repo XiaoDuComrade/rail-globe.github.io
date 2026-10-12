@@ -73,7 +73,7 @@ button:active, .gh:active { transform: scale(0.97); }
 /* ---------- the card ---------- */
 #panel {
   position: fixed; z-index: 2; top: 12px; left: calc(12px + env(safe-area-inset-left, 0px)); width: var(--card-w); max-height: calc(100% - 24px - env(safe-area-inset-bottom, 0px) - var(--kb, 0px));
-  display: flex; flex-direction: column; overflow: hidden; border-radius: 18px;
+  display: flex; flex-direction: column; overflow: hidden; border-radius: 24px;
   background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
   box-shadow: var(--edge), 0 18px 50px rgba(0, 0, 0, 0.5);
 }
@@ -86,9 +86,11 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
 .nobr { white-space: nowrap; }          /* a line to each class: as many lines in either language, and no mark between classes */
 .gh { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 5px 10px; border-radius: 999px; background: var(--fill2); color: var(--label); text-decoration: none; font-size: 0.75rem; font-weight: 500; }
 .title-row h1 { flex: 1; min-width: 0; white-space: nowrap; }
-/* The mark sits beside the name on the home page only; a country page has the back button there. */
-.title-row .mark { flex: none; width: 26px; height: 26px; margin-right: -3px; }
-#panel:not(.world) .title-row .mark { display: none; }
+/* The mark sits beside the search field, which every state of the card shows: the list of countries,
+   a country, the results of a search, and the phone's sheet drawn down to the field alone. */
+.search-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.search-row .mark { flex: none; width: 32px; height: 32px; }
+.search-row .searchbar { flex: 1; min-width: 0; }
 /* The language: 中 / EN, the one in use in white. One touch changes to the other. */
 .lang { flex: none; display: inline-flex; align-items: center; border: 0; margin-left: -6px; padding: 5px 9px; border-radius: 999px; background: var(--fill2); color: var(--label3); font: inherit; font-size: 0.75rem; cursor: pointer; }
 .lang b { font-weight: 500; }
@@ -175,7 +177,7 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
 .steps li.minor i { width: 6px; height: 6px; margin: 0 1px; opacity: 0.8; }
 
 /* ---------- search: the one field, first thing in the card ---------- */
-.searchbar { display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 10px; background: var(--fill2); color: var(--label2); cursor: text; transition: background-color 160ms ease-out; }
+.searchbar { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 20px; background: var(--fill2); color: var(--label2); cursor: text; transition: background-color 160ms ease-out; }
 .searchbar:focus-within { background: var(--fill); }
 .searchbar svg { flex: none; }
 .searchbar input { flex: 1; min-width: 0; color: var(--label); padding: 8px 0; cursor: text; -webkit-appearance: none; appearance: none; }
@@ -320,10 +322,18 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
   /* The sheet at its highest leaves the status bar and the row of quick jumps free; the dynamic
      viewport height keeps that true while the browser's bars come and go. */
   #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: calc(100% - 64px - env(safe-area-inset-top, 0px)); height: calc(100dvh - 64px - env(safe-area-inset-top, 0px));
-    max-height: none; border-radius: 16px 16px 0 0;
+    max-height: none; border-radius: 34px;
     transform: translateY(calc(var(--sheet-y, 70%) + var(--vv-top, 0px))); will-change: transform; box-shadow: var(--edge), 0 -8px 40px rgba(0, 0, 0, 0.45); }
   .grabber { display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--label3); margin: 6px auto 0; }
-  .head { padding: 8px 16px 12px; touch-action: none; cursor: grab; }
+  /* The sheet is a card that floats at every height, as in Apple Maps: clear of the sides and of
+     the foot of the window, all four corners round, so that they sit inside a phone screen's own.
+     The script cuts it off just above the foot (clip-path) wherever it stands. Drawn right down
+     it is the search field alone, with the same space above the field as below it. */
+  #panel { left: 8px; right: 8px; }
+  #panel::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--bar-h, 100%); border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.22) inset; }
+  .grabber { position: absolute; top: 5px; left: 50%; margin: 0 0 0 -18px; }
+  .head { position: relative; padding: 14px 14px 12px; touch-action: none; cursor: grab; }
   /* --kb is the part of the window the keyboard covers while the search field is in use: the
      list ends where the keyboard begins, so no result is hidden behind it. */
   .scroll { flex: none; height: calc(var(--sheet-visible, 50vh) - var(--head-h, 120px) - var(--kb, 0px)); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
@@ -363,6 +373,8 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
 <aside id="panel" class="world" aria-label="搜索、国家、路线、线路与图层" data-ta="aria-label:panel.label">
   <div class="head">
     <div class="grabber" aria-hidden="true"></div>
+    <div class="search-row">
+    <img class="mark" src="mark.png" width="28" height="28" alt="Rail Globe">
     <label class="searchbar">
       <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       <input id="query" type="search" placeholder="车站、线路、城市，如 上海虹桥" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="搜索车站、线路、城市、国家" data-ta="aria-label:search.label" aria-controls="tab-find">
@@ -370,11 +382,11 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.55"/><path d="M5.6 5.6l4.8 4.8m0-4.8l-4.8 4.8" stroke="#1c1c1e" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </label>
+    </div>
     <div class="title-row">
       <button type="button" class="back" id="toWorld" aria-label="返回国家列表" data-ta="aria-label:back.label">
         <svg viewBox="0 0 8 14" width="7" height="12" aria-hidden="true"><path d="M7 1L1 7l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="back">国家</span>
       </button>
-      <img class="mark" src="mark.png" width="26" height="26" alt="">
       <h1 id="title">Rail Globe</h1>
       <a id="ghStar" class="gh" href="https://github.com/rail-globe/rail-globe.github.io" target="_blank" rel="noopener" aria-label="在 GitHub 上给这个项目加星" data-ta="aria-label:star.label">
         <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -1222,7 +1234,7 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
     for (const b of tabButtons) b.setAttribute('aria-selected', String(b.dataset.tab === id));
     if (finding) endSearch(); else paintTabs();
   };
-  for (const b of tabButtons) b.addEventListener('click', () => { showTab(b.dataset.tab); if (isPhone() && sheet.detent() === 'peek') sheet.to('mid'); });
+  for (const b of tabButtons) b.addEventListener('click', () => { showTab(b.dataset.tab); if (isPhone() && (sheet.detent() === 'peek' || sheet.detent() === 'min')) sheet.to('mid'); });
 
   // ---- bottom sheet (phone) ----
   // The sheet follows the finger 1:1 from where it was grabbed, resists softly past its ends, and on
@@ -1237,13 +1249,26 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
     // Three heights. Highest: the whole sheet (its height leaves the quick jumps free, see the
     // styles). Middle: about half the window. At rest: the header, clear of the home indicator;
     // at the list of countries, which has no tabs, also the start of the list.
-    const stops = () => ({ large: 0, mid: Math.max(0, H - Math.round(innerHeight * 0.48)),
-      peek: Math.max(0, H - head.offsetHeight - safe('Bottom') - (world && !finding ? 108 : 0)) });
+    // Lowest: the search field alone, with as much of the card under it as over it.
+    const fieldRow = head.querySelector('.search-row');
+    const under = () => Math.max(8, safe('Bottom') - 8);       // the gap between the card and the foot of the window
+    const bar = () => 2 * fieldRow.offsetTop + fieldRow.offsetHeight;
+    const stops = () => {
+      const s = { large: 0, mid: Math.max(0, H - Math.round(innerHeight * 0.48)),
+      peek: Math.max(0, H - head.offsetHeight - safe('Bottom') - (world && !finding ? 108 : 0)) };
+      s.min = Math.max(s.peek, H - bar() - under());
+      return s;
+    };
+    let gap = 8;
+    const measure = () => { gap = under(); };
     // The credits and the scale sit in the map's lower right corner, which the sheet covers:
     // they ride on its upper edge instead, at every height.
     let riders = null;
     const paint = () => {
       panel.style.setProperty('--sheet-y', y + 'px');
+      const cut = Math.min(H, y + gap);                // the card ends this far above the sheet's own foot
+      panel.style.clipPath = `inset(0 0 ${cut.toFixed(1)}px 0 round 34px)`;
+      panel.style.setProperty('--bar-h', (H - cut).toFixed(1) + 'px');
       riders = riders && riders.isConnected ? riders : document.querySelector('.maplibregl-ctrl-bottom-right');
       if (riders) riders.style.transform = `translateY(${Math.round(y - H)}px)`;
       if (document.body.dataset.sheet !== at) {
@@ -1255,7 +1280,7 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
       }
     };
     const settle = () => {
-      panel.style.setProperty('--sheet-visible', Math.round(H - y) + 'px');
+      panel.style.setProperty('--sheet-visible', Math.round(H - y - gap) + 'px');
       panel.style.setProperty('--head-h', head.offsetHeight + 'px');
       if (onSettle) onSettle();
     };
@@ -1277,22 +1302,26 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
       };
       raf = requestAnimationFrame(step);
     };
-    const to = name => { at = name; if (isPhone()) spring(stops()[name], false); };
+    const to = name => { at = name; if (isPhone()) { measure(); spring(stops()[name], false); } };
     const layout = () => {
       cancelAnimationFrame(raf);
       if (!isPhone()) {
         panel.style.removeProperty('--sheet-y');
+        panel.style.removeProperty('--bar-h');
+        panel.style.clipPath = '';
         if (riders) riders.style.transform = '';
         delete document.body.dataset.sheet;
         return;
       }
       H = panel.offsetHeight;
+      measure();
       y = stops()[at]; v = 0;
       paint(); settle();
     };
     head.addEventListener('pointerdown', e => {
       if (!isPhone() || (e.pointerType === 'mouse' && e.button !== 0)) return;
       cancelAnimationFrame(raf);                       // interrupt: take over from wherever it is now
+      measure();
       drag = { py: e.clientY, y0: y, id: e.pointerId, moved: false, hist: [[e.timeStamp, e.clientY]], onControl: !!e.target.closest('button, a, .searchbar') };
       addEventListener('pointermove', move);
       addEventListener('pointerup', release);
@@ -1306,10 +1335,10 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
         drag.moved = true;
         try { head.setPointerCapture(e.pointerId); } catch (err) { /* the window listeners still follow it */ }
       }
-      const { large, peek } = stops();
+      const { large, min: lowest } = stops();
       let ny = drag.y0 + dy;
       if (ny < large) ny = large - rubber(large - ny, H);
-      else if (ny > peek) ny = peek + rubber(ny - peek, H);
+      else if (ny > lowest) ny = lowest + rubber(ny - lowest, H);
       y = ny;
       paint();
       drag.hist.push([e.timeStamp, e.clientY]);
@@ -1323,7 +1352,7 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
       removeEventListener('pointerup', release);
       removeEventListener('pointercancel', release);
       if (!d.moved) {                                  // a tap on the bare header toggles the sheet
-        if (!d.onControl) to(at === 'peek' ? 'mid' : 'peek');
+        if (!d.onControl) to(at === 'min' ? 'peek' : at === 'peek' ? 'mid' : 'peek');
         else if (y !== stops()[at]) spring(stops()[at], false);
         return;
       }
@@ -1605,6 +1634,9 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
   };
   addCredits();
   relabelled.push(addCredits);
+  // The credits start folded to their (i), which opens them: the words stay one tap away at
+  // every width and are never removed. (Until 2026-10-12 they stood open for the first five seconds.)
+  for (const corner of CORNERS) fold(creditOf(corner));
   let creditTimer = 0;
   // (folded is: neither the class nor "open"; the control's own button then opens it)
   const foldCredits = () => { clearTimeout(creditTimer); fold(credits); };
