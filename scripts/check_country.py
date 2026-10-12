@@ -114,11 +114,15 @@ def check(code):
     say(None in kinds, f"railway classes: {dict(kinds.most_common())}")
     mk = Counter(f["properties"].get("jk") for f in metro)
     say(set(mk) - {"subway", "urban"}, f"metro classes: {dict(mk.most_common())}")
-    split = defaultdict(set)
+    # (a line classed in stretches, each named by property st, has one class per stretch)
+    split, stretches = defaultdict(set), defaultdict(set)
     for f in rail:
-        split[f["properties"]["n"]].add(f["properties"]["jk"])
-    both = sorted(n for n, ks in split.items() if len(ks) > 1)
+        split[(f["properties"]["n"], f["properties"].get("st"))].add(f["properties"]["jk"])
+        stretches[f["properties"]["n"]].add(f["properties"].get("st"))
+    both = sorted(n for (n, st), ks in split.items() if len(ks) > 1)
     say(both, f"lines in two classes at once: {len(both)} {both[:6]}")
+    staged = {n: sorted(st or "" for st in sts) for n, sts in stretches.items() if len(sts) > 1}
+    say(False, f"lines classed in stretches: {len(staged)} {staged}")
 
     # ---- the lines themselves
     by_line = defaultdict(list)

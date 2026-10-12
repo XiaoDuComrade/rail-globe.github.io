@@ -33,6 +33,18 @@ STRUCTURE = re.compile(r"(터널|교량|철교|대교|고가|고가교|교)$")
 HIGH_SPEED = {"경부고속선": (350, False, "https://en.wikipedia.org/wiki/Gyeongbu_high-speed_railway"),
               "수서평택고속선": (350, False, "https://ko.wikipedia.org/wiki/수서평택고속선"),
               "호남고속선": (305, True, "https://en.wikipedia.org/wiki/Honam_high-speed_railway")}
+# One line under two names. South of 태화강 OSM names about half of the 동해선's track 동해본선
+# (71.5 of 132.2 km in the extract of 2026-10-06) and the rest 동해선, way by way, both with
+# name:en "Donghae Line": 동해본선 is the 동해선's own main line as against its branches
+# (https://ko.wikipedia.org/wiki/동해선, read 2026-10-13). Taken as two lines they were drawn in
+# alternating pieces of two colours.
+SAME_LINE = {"동해본선": "동해선"}
+# One line classed in two stretches: (the stretch's name, the latitude it ends at). The 동해선's
+# 부전–태화강 is an ordinary double-track line (설계 최고 속도 130 km/h) and 태화강–삼척 its
+# semi-high-speed part (180 and 200 km/h; the same page's infobox). OSM agrees: north of
+# 태화강역 (35.539 N) all its track is tagged highspeed=yes, south of it none is. Classed as
+# one line the whole of it took the 200 km/h band, through Busan's suburbs too.
+STRETCHES = {"동해선": ("부산진–태화강", 35.5392)}
 # Metro lines are listed by city: (name shown, lon, lat, reach in degrees). Incheon comes before
 # Seoul and reaches less far, so that only its own lines are its own.
 CITIES = [("仁川", 126.65, 37.47, 0.14), ("首尔", 126.98, 37.56, 0.9), ("釜山", 129.06, 35.17, 0.45), ("大邱", 128.60, 35.87, 0.4),
@@ -44,7 +56,16 @@ def plain_name(name):
     structure on a line nothing at all."""
     name = re.sub(r"\s*[（(].*?[)）]", "", name or "")
     name = re.sub(r"\s+", " ", re.split(r"[;；]", name)[0]).strip()
-    return "" if STRUCTURE.search(name) else name
+    return "" if STRUCTURE.search(name) else SAME_LINE.get(name, name)
+
+
+def stretch_of(name, tags, co):
+    """The stretch of its line a track is on, for a line classed in stretches: by where its
+    middle lies."""
+    if name not in STRETCHES:
+        return None
+    stretch, north_end = STRETCHES[name]
+    return stretch if co[len(co) // 2][1] < north_end else None
 
 
 def top_speed(tags_km):
@@ -80,7 +101,7 @@ def speed_of(name, jk, tags_km):
 
 
 KR = Country(
-    code="kr", plain_name=plain_name, kind_of=kind_of, speed_of=speed_of, cities=CITIES, elsewhere="韩国其他",
+    code="kr", plain_name=plain_name, stretch_of=stretch_of, kind_of=kind_of, speed_of=speed_of, cities=CITIES, elsewhere="韩国其他",
     fast_kinds=("hs", "semi"), main_kinds=("main",),
     rail=frozenset({"rail"}), urban=frozenset({"subway", "light_rail", "monorail", "tram"}),
     skip_usage=frozenset({"industrial", "military", "test", "freight", "tourism"}),

@@ -175,6 +175,8 @@ const checks = [
   // 6h. the route network is fetched when a route is first asked for, in both modes
   ['the route network is not fetched at start', page => (page.match(/graph\.json/g) || []).length === 2 && /const loadNetwork = \(\) => network \|\| \(network = getJSON\('data\/graph\.json'\)/.test(page)
     && /if \(f\) \{[\s\S]{0,400}loadNetwork\(\)\.catch/.test(page)],
+  // 2026-10-13, Korea's 동해선: one line, an ordinary stretch and a semi-high-speed one
+  ['a line classed in stretches is listed once', /for \(const l of itsLines\) if \(!l\.st\) lines\.push\(l\);/],
   // 6i. on a phone (2026-10-09, "手机端页面优化一下")
   // the credits are in sight at every height of the sheet: they ride on its upper edge
   ['the credits and the scale ride on the sheet', /riders = riders && riders\.isConnected \? riders : document\.querySelector\('\.maplibregl-ctrl-bottom-right'\);\s+if \(riders\) riders\.style\.transform = `translateY\(\$\{Math\.round\(y - H\)\}px\)`;/],
@@ -193,7 +195,8 @@ const checks = [
     && /\n\s+attribution: IMAGERY,/.test(page)],
   ['the credits are made again in the language of the moment, folded if they were', /const folded = credits && !credits\.classList\.contains\('maplibregl-compact-show'\);\s+if \(creditControl\) map\.removeControl\(creditControl\);[\s\S]{0,400}if \(folded\) fold\(credits\);\s+\};\s+addCredits\(\);\s+relabelled\.push\(addCredits\);/],
   ['on a wide screen the credits are 12 px in from the corner, the scale on their left, the card clear of their line', page =>
-    /\.maplibregl-ctrl-bottom-right \{ display: flex; flex-direction: row-reverse; align-items: flex-end; max-width: calc\(100% - 24px\); \}/.test(page)
+    /\.maplibregl-ctrl-bottom-right \{ display: flex; flex-direction: row-reverse; align-items: center; max-width: calc\(100% - 24px\); \}/.test(page)
+    && /\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl\.maplibregl-ctrl-scale \{ margin: 0 8px 12px 0; \}/.test(page)
     && /\.maplibregl-ctrl-bottom-right \.maplibregl-ctrl\.maplibregl-ctrl-attrib \{ margin: 0 12px 12px 0; \}/.test(page)
     && /@media not all and \(max-width: 720px\) \{\s+#panel \{ max-height: calc\(100% - 68px - env\(safe-area-inset-bottom, 0px\) - var\(--kb, 0px\)\); \}/.test(page)],
   ['the credits start folded to their (i)', /relabelled\.push\(addCredits\);\s+\/\/[^\n]*\n\s+\/\/[^\n]*\n\s+fold\(credits\);/],

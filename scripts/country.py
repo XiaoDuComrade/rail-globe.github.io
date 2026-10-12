@@ -63,6 +63,8 @@ class Country:
     skip_stations: tuple = ("funicular", "miniature", "monorail")
     tag_keys: tuple = ("railway", "railway:preserved", "usage")     # the tags of a line's track that its class is read from
     minor_km: float = 1.5                       # a name on less track than this is a chord or a curve: it joins the line it connects
+    stretch_of: Callable = field(default=lambda name, tags, co: None)     # (line name, a track's tags, its coordinates) -> the stretch
+                                                # of the line it is on, where one line is classed in stretches (else None)
     metro_min_km: float = 2.0                   # shorter "lines" are airport shuttles and rides
     colour_networks: object = None              # networks of a few lines with official colours, however few colours that makes
     many_colours: int = 5                       # a company with this many colours on its routes is colouring lines, not showing a brand
@@ -121,7 +123,7 @@ def run(cfg):
     for wid in running:
         name = cfg.plain_name(ways[wid][0].get("name"))
         if name and named_km[name] >= cfg.minor_km:
-            line_of[wid] = ("rail", None, name)
+            line_of[wid] = ("rail", cfg.stretch_of(name, *ways[wid]), name)
         else:
             unnamed.append((wid, name))
     # A structure named for itself, a chord, and track with no name joins the line it connects,
@@ -131,11 +133,11 @@ def run(cfg):
     unnamed = [(wid, name_of[wid]) for wid in adopt_unnamed(line_of, [wid for wid, _ in unnamed], ways)]
     for wid, name in unnamed:
         if name:
-            line_of[wid] = ("rail", None, name)
+            line_of[wid] = ("rail", cfg.stretch_of(name, *ways[wid]), name)
     lost = sum(length[w] for w, name in unnamed if not name)
     print(f"{cfg.code}: {len(line_of)} ways on named lines, {sum(length[w] for w in line_of):.0f} km of track; "
           f"{lost:.0f} km of running track left without a line", flush=True)
-    tracks = defaultdict(list)                     # (layer, None, name) -> ways
+    tracks = defaultdict(list)                     # (layer, stretch or None, name) -> ways
     for wid, key in line_of.items():
         tracks[key].append(wid)
 
@@ -173,7 +175,7 @@ def run(cfg):
           {k: round(v) for k, v in by_firm.most_common()}, flush=True)
 
     # ---------------------------------------------------------------- railways: each line drawn once
-    rail_keys = sorted(tracks)
+    rail_keys = sorted(tracks, key=lambda key: (key[0], key[2], key[1] or ""))
     once = {}
     for key in rail_keys:
         runs = runs_of([ways[w][1] for w in tracks[key]])
@@ -200,6 +202,8 @@ def run(cfg):
         if not simp:
             continue
         props = {"c": "main" if jk in cfg.main_kinds else "branch", "n": name, "g": cfg.code, "jk": jk}
+        if key[1]:                                   # a stretch of a line classed in stretches says which it is
+            props["st"] = key[1]
         if fast:                                     # speed before everything else
             speed, estimate, source = fast
             props.update({"c": grade(speed), "d": speed})
@@ -213,7 +217,7 @@ def run(cfg):
         for seg_co in simp:
             rail_feats.append({"type": "Feature", "properties": dict(props), "geometry": geometry([seg_co])})
         row = {"n": name, "g": cfg.code, "jk": jk, "bbox": bbox_of(simp), "tk": round(total), "c": props["c"]}
-        for k in ("lc", "d", "e", "ref"):
+        for k in ("lc", "d", "e", "ref", "st"):
             if k in props:
                 row[k] = props[k]
         lines_json.append(namer.copy(row, props))

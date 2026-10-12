@@ -252,14 +252,15 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
 .maplibregl-ctrl-attrib-button { filter: invert(1); opacity: 0.75; }
 /* The credits stand in the window's lower right corner at every width (2026-10-13, "放右下角"):
    one control, with the scale. On a wide screen it is 12 px in, as the zoom buttons are above,
-   and the scale stands on its left on the same line; opened, the words push the scale further
-   left. The card ends 56 px above the window's foot, so that line is free of it in a narrow
+   and the scale stands on its left on the same line, the two centred on each other (equal
+   margins below, so the centring is of the controls themselves); opened, the words push the
+   scale further left. The card ends 56 px above the window's foot, so that line is free of it in a narrow
    window too. */
 @media not all and (max-width: 720px) {
   #panel { max-height: calc(100% - 68px - env(safe-area-inset-bottom, 0px) - var(--kb, 0px)); }
-  .maplibregl-ctrl-bottom-right { display: flex; flex-direction: row-reverse; align-items: flex-end; max-width: calc(100% - 24px); }
+  .maplibregl-ctrl-bottom-right { display: flex; flex-direction: row-reverse; align-items: center; max-width: calc(100% - 24px); }
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-attrib { margin: 0 12px 12px 0; }
-  .maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-scale { margin: 0 8px 14px 0; }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-scale { margin: 0 8px 12px 0; }
 }
 .maplibregl-ctrl-scale { background: rgba(28, 28, 30, 0.5); color: var(--label); border-color: var(--label2); font: 0.6875rem var(--font); font-variant-numeric: tabular-nums; }
 #loading { position: fixed; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; font-size: 0.8125rem; color: var(--label2); }
@@ -1748,7 +1749,9 @@ h1 { margin: 0; font-size: 1.0625rem; line-height: 1.25; font-weight: 600; lette
       for (const f of rail.features) conv.features.push(f);      // all on conv, told apart by g and jk
       for (const f of itsMetro.features) metro.features.push(f);
       for (const f of itsStations.features) (f.properties.m ? metroStations : stations).features.push(f);
-      for (const l of itsLines) lines.push(l);
+      // (a line classed in stretches is listed once, by its row without a stretch: the map draws
+      // each stretch in its own class, and the whole line is selected by its name)
+      for (const l of itsLines) if (!l.st) lines.push(l);
       for (const c of itsCities) { c.g = g; metroCities.push(c); }
       for (const f of (itsBuild ? itsBuild.features : [])) build.features.push(f);
       FOREIGN[g].hasBuild = tiles ? tiles[g].build > 0 : !!(itsBuild && itsBuild.features.length);
